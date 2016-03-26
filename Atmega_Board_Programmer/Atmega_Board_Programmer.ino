@@ -160,6 +160,7 @@ typedef struct {
 
 const uint8_t interruptPin = 2;
 long lastInterrupt = 0L;
+bool isButtonPressed = false;
 
 // see Atmega328 datasheet page 298
 const bootloaderType bootloaders [] PROGMEM = {
@@ -400,6 +401,20 @@ void getSignature() {
 
 void blink() {
     Serial.println("In Callback");
+    isButtonPressed = true;
+}
+
+void programBootloader() {
+    if (startProgramming()) {
+        getSignature();
+        getFuseBytes();
+
+        // if we found a signature try to write a bootloader
+        if (foundSig != -1) {
+            writeBootloader();
+        }
+        stopProgramming();
+    }   // end of if entered programming mode OK
 }
 
 void setup() {
@@ -417,18 +432,8 @@ void setup() {
 }  // end of setup
 
 void loop() {
-    if (startProgramming ()) {
-        getSignature ();
-        getFuseBytes ();
-
-        // if we found a signature try to write a bootloader
-        if (foundSig != -1) {
-            writeBootloader ();
-        }
-        stopProgramming ();
-    }   // end of if entered programming mode OK
-
-
-    Serial.println(F("Type 'C' when ready to continue with another chip ..."));
-    while (toupper (Serial.read ()) != 'C') {}
+    if (isButtonPressed && millis() - lastInterrupt >= 5000) {
+        lastInterrupt = millis();
+        programBootloader();
+    }
 }  // end of loop
