@@ -74,15 +74,15 @@ Tools -> Boards menu.
 #define ICSP_PROGRAMMING true
 
 #if HIGH_VOLTAGE_PARALLEL && HIGH_VOLTAGE_SERIAL
-#error Cannot use both high-voltage parallel and serial at the same time
+  #error Cannot use both high-voltage parallel and serial at the same time
 #endif
 
 #if (HIGH_VOLTAGE_PARALLEL || HIGH_VOLTAGE_SERIAL) && ICSP_PROGRAMMING
-#error Cannot use ICSP and high-voltage programming at the same time
+  #error Cannot use ICSP and high-voltage programming at the same time
 #endif
 
 #if !(HIGH_VOLTAGE_PARALLEL || HIGH_VOLTAGE_SERIAL || ICSP_PROGRAMMING)
-#error Choose a programming mode: HIGH_VOLTAGE_PARALLEL, HIGH_VOLTAGE_SERIAL or ICSP_PROGRAMMING
+  #error Choose a programming mode: HIGH_VOLTAGE_PARALLEL, HIGH_VOLTAGE_SERIAL or ICSP_PROGRAMMING
 #endif
 
 const int ENTER_PROGRAMMING_ATTEMPTS = 50;
@@ -124,20 +124,21 @@ const unsigned long BAUD_RATE = 115200;
 const byte CLOCKOUT = 9;
 
 #if ICSP_PROGRAMMING
+  #ifdef ARDUINO_PINOCCIO
+    const byte RESET = SS;  // --> goes to reset on the target board
+  #else
+    const byte RESET = 10;  // --> goes to reset on the target board
+  #endif
 
-#ifdef ARDUINO_PINOCCIO
-const byte RESET = SS;  // --> goes to reset on the target board
-#else
-const byte RESET = 10;  // --> goes to reset on the target board
-#endif
-
-#if ARDUINO < 100
-const byte SCK = 13;    // SPI clock
-#endif
-
+  #if ARDUINO < 100
+    const byte SCK = 13;    // SPI clock
+  #endif
 #endif // ICSP_PROGRAMMING
+// For CERES, Top block can be replaced with:
+// const byte RESET = 10;
+// const byte SCK = 13;
 
-#include "HV_Pins.h"
+// #include "HV_Pins.h"
 #include "Signatures.h"
 #include "General_Stuff.h"
 
@@ -160,7 +161,7 @@ typedef struct {
 
 const uint8_t interruptPin = 2;
 long lastInterrupt = 0L;
-bool isButtonPressed = false;
+bool executeBootloading = false;
 
 // see Atmega328 datasheet page 298
 const bootloaderType bootloaders [] PROGMEM = {
@@ -184,15 +185,15 @@ const bootloaderType bootloaders [] PROGMEM = {
 
 void getFuseBytes() {
     Serial.print(F("LFuse = "));
-    showHex (readFuse (lowFuse), true);
+    showHex(readFuse(lowFuse), true);
     Serial.print(F("HFuse = "));
-    showHex (readFuse (highFuse), true);
+    showHex(readFuse(highFuse), true);
     Serial.print(F("EFuse = "));
-    showHex (readFuse (extFuse), true);
+    showHex(readFuse(extFuse), true);
     Serial.print(F("Lock byte = "));
-    showHex (readFuse (lockByte), true);
+    showHex(readFuse(lockByte), true);
     Serial.print(F("Clock calibration = "));
-    showHex (readFuse (calibrationByte), true);
+    showHex(readFuse(calibrationByte), true);
 }  // end of getFuseBytes
 
 bootloaderType currentBootloader;
@@ -202,7 +203,6 @@ void writeBootloader() {
     bool foundBootloader = false;
 
     for (int j = 0; j < NUMITEMS (bootloaders); j++) {
-
         memcpy_P(&currentBootloader, &bootloaders [j], sizeof currentBootloader);
 
         if (memcmp(currentSignature.sig, currentBootloader.sig, sizeof currentSignature.sig) == 0) {
@@ -231,36 +231,22 @@ void writeBootloader() {
     byte newextFuse = currentBootloader.extFuse;
     byte newlockByte = currentBootloader.lockByte;
 
-
     unsigned long addr = currentBootloader.loaderStart;
     unsigned int  len = currentBootloader.loaderLength;
     unsigned long pagesize = currentSignature.pageSize;
     unsigned long pagemask = ~(pagesize - 1);
     const byte * bootloader = currentBootloader.bootloader;
 
-
-    byte subcommand = 'U';
-
     // Atmega328P or Atmega328
-    if (currentBootloader.sig[0] == 0x1E &&
-        currentBootloader.sig[1] == 0x95 &&
-        (currentBootloader.sig[2] == 0x0F || currentBootloader.sig[2] == 0x14)) {
-        Serial.println(F("Type 'L' to use Lilypad (8 MHz) loader, or 'U' for Uno (16 MHz) loader ..."));
-        do {
-            subcommand = toupper (Serial.read ());
-        } while (subcommand != 'L' && subcommand != 'U');
+    if (currentBootloader.sig[0] == 0x1E && currentBootloader.sig[1] == 0x95
+        && (currentBootloader.sig[2] == 0x0F || currentBootloader.sig[2] == 0x14)) {
 
-        if (subcommand == 'L') { // use internal 8 MHz clock
-
-            Serial.println(F("Using Lilypad 8 MHz loader."));
-            bootloader = ATmegaBOOT_168_atmega328_pro_8MHz_hex;
-            newlFuse = 0xE2;  // internal 8 MHz oscillator
-            newhFuse = 0xDA;  //  2048 byte bootloader, SPI enabled
-            addr = 0x7800;
-            len = sizeof ATmegaBOOT_168_atmega328_pro_8MHz_hex;
-        } else { // end of using the 8 MHz clock
-            Serial.println(F("Using Uno Optiboot 16 MHz loader."));
-        }
+        Serial.println(F("Using Lilypad 8 MHz loader."));
+        bootloader = ATmegaBOOT_168_atmega328_pro_8MHz_hex;
+        newlFuse = 0xE2;  // internal 8 MHz oscillator
+        newhFuse = 0xDA;  //  2048 byte bootloader, SPI enabled
+        addr = 0x7800;
+        len = sizeof ATmegaBOOT_168_atmega328_pro_8MHz_hex;
     }  // end of being Atmega328P
 
     Serial.print(F("Bootloader address = 0x"));
@@ -271,53 +257,40 @@ void writeBootloader() {
 
     unsigned long oldPage = addr & pagemask;
 
-    Serial.println(F("Type 'Q' to quit, 'V' to verify, or 'G' to program the chip with the bootloader ..."));
-    char command;
-    do{
-        command = toupper(Serial.read());
-    } while (command != 'G' && command != 'V' && command != 'Q');
-
-    // let them do nothing
-    if (command == 'Q') {
-        return;
-    }
-
-    if (command == 'G') {
-
-        // Automatically fix up fuse to run faster, then write to device
-        if (lFuse != newlFuse) {
-            if ((lFuse & 0x80) == 0) {
-                Serial.println(F("Clearing 'Divide clock by 8' fuse bit."));
-            }
-
-            Serial.println(F("Fixing low fuse setting ..."));
-            writeFuse (newlFuse, lowFuse);
-            delay (1000);
-            stopProgramming ();  // latch fuse
-            if (!startProgramming ()) {
-                return;
-            }
-            delay (1000);
+    // Automatically fix up fuse to run faster, then write to device
+    if (lFuse != newlFuse) {
+        if ((lFuse & 0x80) == 0) {
+            Serial.println(F("Clearing 'Divide clock by 8' fuse bit."));
         }
 
-        Serial.println(F("Erasing chip ..."));
-        eraseMemory();
-        Serial.println(F("Writing bootloader ..."));
-        for (i = 0; i < len; i += 2) {
-            unsigned long thisPage = (addr + i) & pagemask;
-            // page changed? commit old one
-            if (thisPage != oldPage) {
-                commitPage (oldPage, true);
-                oldPage = thisPage;
-            }
-            writeFlash(addr + i, pgm_read_byte(bootloader + i));
-            writeFlash(addr + i + 1, pgm_read_byte(bootloader + i + 1));
-        }  // end while doing each word
+        Serial.println(F("Fixing low fuse setting ..."));
+        writeFuse (newlFuse, lowFuse);
+        delay (1000);
+        stopProgramming ();  // latch fuse
+        if (!startProgramming ()) {
+            return;
+        }
+        delay (1000);
+    }
 
-        // commit final page
-        commitPage(oldPage, true);
-        Serial.println(F("Written."));
-    }  // end if programming
+    Serial.println(F("Erasing chip ..."));
+    eraseMemory();
+    Serial.println(F("Writing bootloader ..."));
+    for (i = 0; i < len; i += 2) {
+        unsigned long thisPage = (addr + i) & pagemask;
+        // page changed? commit old one
+        if (thisPage != oldPage) {
+            commitPage (oldPage, true);
+            oldPage = thisPage;
+        }
+        writeFlash(addr + i, pgm_read_byte(bootloader + i));
+        writeFlash(addr + i + 1, pgm_read_byte(bootloader + i + 1));
+    }  // end while doing each word
+
+    // commit final page
+    commitPage(oldPage, true);
+    Serial.println(F("Written."));
+    // }  // end if programming
 
     Serial.println(F("Verifying ..."));
 
@@ -350,20 +323,16 @@ void writeBootloader() {
         return;  // don't change fuses if errors
     }  // end if
 
-    if (command == 'G') {
-        Serial.println(F("Writing fuses ..."));
+    Serial.println(F("Writing fuses ..."));
 
-        writeFuse(newlFuse, lowFuse);
-        writeFuse(newhFuse, highFuse);
-        writeFuse(newextFuse, extFuse);
-        writeFuse(newlockByte, lockByte);
+    writeFuse(newlFuse, lowFuse);
+    writeFuse(newhFuse, highFuse);
+    writeFuse(newextFuse, extFuse);
+    writeFuse(newlockByte, lockByte);
 
-        // confirm them
-        getFuseBytes();
-    }  // end if programming
-
+    // confirm them
+    getFuseBytes();
     Serial.println(F("Done."));
-
 } // end of writeBootloader
 
 void getSignature() {
@@ -399,9 +368,12 @@ void getSignature() {
     Serial.println(F("Unrecogized signature."));
 }  // end of getSignature
 
-void blink() {
+void bootloadingInterruptCallback() {
     Serial.println("In Callback");
-    isButtonPressed = true;
+    if (millis() - lastInterrupt >= 5000) {
+        lastInterrupt = millis();
+        executeBootloading = true;
+    }
 }
 
 void programBootloader() {
@@ -428,12 +400,12 @@ void setup() {
     initPins ();
 
     pinMode(interruptPin, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(interruptPin), blink, FALLING);
+    attachInterrupt(digitalPinToInterrupt(interruptPin), bootloadingInterruptCallback, FALLING);
 }  // end of setup
 
 void loop() {
-    if (isButtonPressed && millis() - lastInterrupt >= 5000) {
-        lastInterrupt = millis();
+    if (executeBootloading) {
         programBootloader();
+        executeBootloading = false;
     }
 }  // end of loop
