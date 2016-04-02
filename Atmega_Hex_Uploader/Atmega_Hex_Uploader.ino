@@ -29,7 +29,7 @@
 // Version 1.20: Added support to ignore extra Intel Hex record types (4 and 5)
 // Version 1.21: Fixed bug in pollUntilReady function
 // Version 1.22: Cleaned up _BV() macro to use bit() macro instead for readability
-// Version 1.23: Fixed bug regarding checking if you set the SPIEN bit (wrong value used)
+// Version 1.23: Fixed bug regarding checking if you set the SPIEN bit(wrong value used)
 // Version 1.24: Display message if cannot enter programming mode.
 // Version 1.25: Bug fixes
 // Version 1.26: Show Arduino IDE version
@@ -85,34 +85,34 @@ const bool allowTargetToRun = true;  // if true, programming lines are freed whe
 
 /*
 
- For more details, photos, wiring, instructions, see:
+For more details, photos, wiring, instructions, see:
 
-    http://www.gammon.com.au/forum/?id=11638
-
-
- Copyright 2012 Nick Gammon.
+http://www.gammon.com.au/forum/?id=11638
 
 
- PERMISSION TO DISTRIBUTE
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- and associated documentation files (the "Software"), to deal in the Software without restriction,
- including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
+Copyright 2012 Nick Gammon.
 
 
- LIMITATION OF LIABILITY
+PERMISSION TO DISTRIBUTE
 
- The software is provided "as is", without warranty of any kind, express or implied,
- including but not limited to the warranties of merchantability, fitness for a particular
- purpose and noninfringement. In no event shall the authors or copyright holders be liable
- for any claim, damages or other liability, whether in an action of contract,
- tort or otherwise, arising from, out of or in connection with the software
- or the use or other dealings in the software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+and associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+
+LIMITATION OF LIABILITY
+
+The software is provided "as is", without warranty of any kind, express or implied,
+including but not limited to the warranties of merchantability, fitness for a particular
+purpose and noninfringement. In no event shall the authors or copyright holders be liable
+for any claim, damages or other liability, whether in an action of contract,
+tort or otherwise, arising from, out of or in connection with the software
+or the use or other dealings in the software.
 
 */
 
@@ -128,7 +128,7 @@ const char Version [] = "1.35";
 
 const unsigned int ENTER_PROGRAMMING_ATTEMPTS = 50;
 
-#include "HV_Pins.h"
+// #include "HV_Pins.h"
 #include "Signatures.h"
 #include "General_Stuff.h"
 
@@ -139,39 +139,37 @@ const byte CLOCKOUT = 9;
 
 #if USE_BIT_BANGED_SPI
 
-  // bit banged SPI pins
-  #ifdef __AVR_ATmega2560__
+    // bit banged SPI pins
+    #ifdef __AVR_ATmega2560__
     // Atmega2560
-    #if USE_ETHERNET_SHIELD
-      const byte MSPIM_SCK = 3;  // port E bit 5
-    #else
-      const byte MSPIM_SCK = 4;  // port G bit 5
-    #endif
-    const byte MSPIM_SS  = 5;  // port E bit 3
-    const byte BB_MISO   = 6;  // port H bit 3
-    const byte BB_MOSI   = 7;  // port H bit 4
-  #elif defined(__AVR_ATmega1284P__)
+        #if USE_ETHERNET_SHIELD
+            const byte MSPIM_SCK = 3;  // port E bit 5
+        #else
+            const byte MSPIM_SCK = 4;  // port G bit 5
+        #endif
+        const byte MSPIM_SS  = 5;  // port E bit 3
+        const byte BB_MISO   = 6;  // port H bit 3
+        const byte BB_MOSI   = 7;  // port H bit 4
+    #elif defined(__AVR_ATmega1284P__)
     // Atmega1284P
-    const byte MSPIM_SCK = 11;  // port D bit 3
-    const byte MSPIM_SS  = 12;  // port D bit 4
-    const byte BB_MISO   = 13;  // port D bit 5
-    const byte BB_MOSI   = 14;  // port D bit 6
-  #else
-    // Atmega328
-    #if USE_ETHERNET_SHIELD
-      const byte MSPIM_SCK = 3;  // port D bit 3
+        const byte MSPIM_SCK = 11;  // port D bit 3
+        const byte MSPIM_SS  = 12;  // port D bit 4
+        const byte BB_MISO   = 13;  // port D bit 5
+        const byte BB_MOSI   = 14;  // port D bit 6
     #else
-      const byte MSPIM_SCK = 4;  // port D bit 4
+        // Atmega328
+        #if USE_ETHERNET_SHIELD
+            const byte MSPIM_SCK = 3;  // port D bit 3
+        #else
+            const byte MSPIM_SCK = 4;  // port D bit 4
+        #endif
+        const byte MSPIM_SS  = 5;  // port D bit 5
+        const byte BB_MISO   = 6;  // port D bit 6
+        const byte BB_MOSI   = 7;  // port D bit 7
     #endif
-    const byte MSPIM_SS  = 5;  // port D bit 5
-    const byte BB_MISO   = 6;  // port D bit 6
-    const byte BB_MOSI   = 7;  // port D bit 7
-  #endif
+    /*
 
-
-  /*
-
-  Connect target processor like this:
+    Connect target processor like this:
 
     D4: (SCK)   --> SCK as per datasheet (If using Ethernet shield, use D3 instead)
     D5: (SS)    --> goes to /RESET on target
@@ -180,74 +178,101 @@ const byte CLOCKOUT = 9;
 
     D9: 8 Mhz clock signal if required by target
 
-  Connect SD card like this:
+    Connect SD card like this:
 
     D10: SS   (chip select)
     D11: MOSI (DI - data into SD card)
     D12: MISO (DO - data out from SD card)
     D13: SCK  (CLK - clock)
 
-  Both SD card and target processor will need +5V and Gnd connected.
+    Both SD card and target processor will need +5V and Gnd connected.
 
-  */
+    */
 
-  // for fast port access
-  #ifdef __AVR_ATmega2560__
-    // Atmega2560
-    #define BB_MISO_PORT PINH
-    #define BB_MOSI_PORT PORTH
-    #if USE_ETHERNET_SHIELD
-      #define BB_SCK_PORT PORTE   // Pin D3
+    // for fast port access
+    #ifdef __AVR_ATmega2560__
+        // Atmega2560
+        #define BB_MISO_PORT PINH
+        #define BB_MOSI_PORT PORTH
+        #if USE_ETHERNET_SHIELD
+        #define BB_SCK_PORT PORTE   // Pin D3
+        #else
+        #define BB_SCK_PORT PORTG   // Pind D4
+        #endif
+        const byte BB_SCK_BIT = 5;
+        const byte BB_MISO_BIT = 3;
+        const byte BB_MOSI_BIT = 4;
+    #elif defined(__AVR_ATmega1284P__)
+        // Atmega1284P
+        #define BB_MISO_PORT PIND
+        #define BB_MOSI_PORT PORTD
+        #define BB_SCK_PORT PORTD
+        const byte BB_SCK_BIT = 3;
+        const byte BB_MISO_BIT = 5;
+        const byte BB_MOSI_BIT = 6;
     #else
-      #define BB_SCK_PORT PORTG   // Pind D4
+        // Atmega328
+        #define BB_MISO_PORT PIND
+        #define BB_MOSI_PORT PORTD
+        #define BB_SCK_PORT PORTD
+        #if USE_ETHERNET_SHIELD
+            const byte BB_SCK_BIT = 3;  // Pin D3
+        #else
+            const byte BB_SCK_BIT = 4;  // Pind D4
+        #endif
+        const byte BB_MISO_BIT = 6;
+        const byte BB_MOSI_BIT = 7;
     #endif
-    const byte BB_SCK_BIT = 5;
-    const byte BB_MISO_BIT = 3;
-    const byte BB_MOSI_BIT = 4;
-  #elif defined(__AVR_ATmega1284P__)
-    // Atmega1284P
-    #define BB_MISO_PORT PIND
-    #define BB_MOSI_PORT PORTD
-    #define BB_SCK_PORT PORTD
-    const byte BB_SCK_BIT = 3;
-    const byte BB_MISO_BIT = 5;
-    const byte BB_MOSI_BIT = 6;
-  #else
-    // Atmega328
-    #define BB_MISO_PORT PIND
-    #define BB_MOSI_PORT PORTD
-    #define BB_SCK_PORT PORTD
-    #if USE_ETHERNET_SHIELD
-      const byte BB_SCK_BIT = 3;  // Pin D3
-    #else
-      const byte BB_SCK_BIT = 4;  // Pind D4
-    #endif
-    const byte BB_MISO_BIT = 6;
-    const byte BB_MOSI_BIT = 7;
-  #endif
 
-  // control speed of programming
-  const byte BB_DELAY_MICROSECONDS = 4;
-
-
-
+    // control speed of programming
+    const byte BB_DELAY_MICROSECONDS = 4;
 #endif // USE_BIT_BANGED_SPI
-
+/**
+* CERES board.
+* the previous block can probably be replaced with
+*
+* // bit banged SPI pins
+* const byte MSPIM_SCK = 4;  // port D4 (SCK)
+* const byte MSPIM_SS  = 5;  // port D5 (SS)
+* const byte BB_MISO   = 6;  // port D6 (MISO)
+* const byte BB_MOSI   = 7;  // port D7 (MOSI)
+*
+* // for fast port access https://www.arduino.cc/en/Reference/PortManipulation
+* #define BB_MISO_PORT PIND
+* #define BB_MOSI_PORT PORTD
+* #define BB_SCK_PORT PORTD
+* const byte BB_SCK_BIT = 4;  // Pind D4
+* const byte BB_MISO_BIT = 6;
+* const byte BB_MOSI_BIT = 7;
+*
+* // control speed of programming
+* const byte BB_DELAY_MICROSECONDS = 4;
+*/
 
 #if SD_CARD_ACTIVE
-  // SD chip select pin
-  #if USE_ETHERNET_SHIELD
-    const uint8_t chipSelect = 4;   // Ethernet shield uses D4 as SD select
-  #else
-    const uint8_t chipSelect = SS;  // Otherwise normal slave select
-  #endif
+    // SD chip select pin
+    #if USE_ETHERNET_SHIELD
+        const uint8_t chipSelect = 4;   // Ethernet shield uses D4 as SD select
+    #else
+        const uint8_t chipSelect = SS;  // Otherwise normal slave select
+    #endif
 
-  const int MAX_FILENAME = 13;
-  void * LAST_FILENAME_LOCATION_IN_EEPROM = 0;
+    const int MAX_FILENAME = 13;
+    void * LAST_FILENAME_LOCATION_IN_EEPROM = 0;
 
-  // file system object
-  SdFat sd;
+    // file system object
+    SdFat sd;
 #endif
+
+/**
+* CERES replace previous block with
+const uint8_t chipSelect = SS;
+const int MAX_FILENAME = 13;
+void * LAST_FILENAME_LOCATION_IN_EEPROM = 0;
+
+// file system object
+SdFat sd;
+*/
 
 // actions to take
 enum {
@@ -260,547 +285,345 @@ enum {
 // get a line from serial (file name)
 //  ignore spaces, tabs etc.
 //  forces to upper case
-void getline (char * buf, size_t bufsize)
-{
-byte i;
+void getline(char * buf, size_t bufsize) {
+    byte i;
 
-  // discard any old junk
-  while (Serial.available ())
+    // discard any old junk
+    while (Serial.available ())
     Serial.read ();
 
-  for (i = 0; i < bufsize - 1; )
-    {
-    if (Serial.available ())
-      {
-      int c = Serial.read ();
+    for (i = 0; i < bufsize - 1;) {
+        if (Serial.available()) {
+            int c = Serial.read();
 
-      if (c == '\n')  // newline terminates
-        break;
+            if (c == '\n') {  // newline terminates
+                break;
+            }
 
-      if (!isspace (c))  // ignore spaces, carriage-return etc.
-        buf [i++] = toupper (c);
-      } // end if available
+            if (!isspace(c)) {  // ignore spaces, carriage-return etc.
+                buf [i++] = toupper (c);
+            }
+        } // end if available
     }  // end of for
-  buf [i] = 0;  // terminator
-  Serial.println (buf);  // echo what they typed
-  }     // end of getline
+    buf [i] = 0;  // terminator
+    Serial.println(buf);  // echo what they typed
+}     // end of getline
 
 
 #if USE_BIT_BANGED_SPI
-
-  // Bit Banged SPI transfer
-  byte BB_SPITransfer (byte c)
-  {
+// Bit Banged SPI transfer
+byte BB_SPITransfer(byte c) {
     byte bit;
 
-    for (bit = 0; bit < 8; bit++)
-      {
-      // write MOSI on falling edge of previous clock
-      if (c & 0x80)
-          BB_MOSI_PORT |= bit (BB_MOSI_BIT);
-      else
-          BB_MOSI_PORT &= ~bit (BB_MOSI_BIT);
-      c <<= 1;
+    for (bit = 0; bit < 8; bit++) {
+        // write MOSI on falling edge of previous clock
+        if (c & 0x80) {
+            BB_MOSI_PORT |= bit(BB_MOSI_BIT);
+        } else {
+            BB_MOSI_PORT &= ~bit(BB_MOSI_BIT);
+        }
+        c <<= 1;
 
-      // read MISO
-      c |= (BB_MISO_PORT & bit (BB_MISO_BIT)) != 0;
+        // read MISO
+        c |= (BB_MISO_PORT & bit(BB_MISO_BIT)) != 0;
 
-     // clock high
-      BB_SCK_PORT |= bit (BB_SCK_BIT);
+        // clock high
+        BB_SCK_PORT |= bit(BB_SCK_BIT);
 
-      // delay between rise and fall of clock
-      delayMicroseconds (BB_DELAY_MICROSECONDS);
+        // delay between rise and fall of clock
+        delayMicroseconds(BB_DELAY_MICROSECONDS);
 
-      // clock low
-      BB_SCK_PORT &= ~bit (BB_SCK_BIT);
+        // clock low
+        BB_SCK_PORT &= ~bit(BB_SCK_BIT);
 
-      // delay between rise and fall of clock
-      delayMicroseconds (BB_DELAY_MICROSECONDS);
-      }
+        // delay between rise and fall of clock
+        delayMicroseconds(BB_DELAY_MICROSECONDS);
+    }
 
     return c;
-    }  // end of BB_SPITransfer
+}  // end of BB_SPITransfer
 
 #endif // USE_BIT_BANGED_SPI
 
-bool haveSDcard;
-
+bool haveSDcard; // TODO: move, Set and modified in File_Utils
 
 // convert two hex characters into a byte
 //    returns true if error, false if OK
-bool hexConv (const char * (& pStr), byte & b)
-  {
+bool hexConv(const char * (& pStr), byte & b) { //TODO: move, used in File_Utils
 
-  if (!isxdigit (pStr [0]) || !isxdigit (pStr [1]))
-    {
-    Serial.print (F("Invalid hex digits: "));
-    Serial.print (pStr [0]);
-    Serial.println (pStr [1]);
-    return true;
+    if (!isxdigit(pStr [0]) || !isxdigit(pStr [1])) {
+        Serial.print(F("Invalid hex digits: "));
+        Serial.print(pStr [0]);
+        Serial.println(pStr [1]);
+        return true;
     } // end not hex
 
-  b = *pStr++ - '0';
-  if (b > 9)
-    b -= 7;
+    b = *pStr++ - '0';
+    if (b > 9) {
+        b -= 7;
+    }
 
-  // high-order nybble
-  b <<= 4;
+    // high-order nybble
+    b <<= 4;
 
-  byte b1 = *pStr++ - '0';
-  if (b1 > 9)
-    b1 -= 7;
+    byte b1 = *pStr++ - '0';
+    if (b1 > 9) {
+        b1 -= 7;
+    }
 
-  b |= b1;
+    b |= b1;
 
-  return false;  // OK
-  }  // end of hexConv
+    return false;  // OK
+}  // end of hexConv
 
 
-void verifyData (const unsigned long addr, const byte * pData, const int length)
-  {
-  // check each byte
-  for (int i = 0; i < length; i++)
-    {
-    unsigned long thisPage = (addr + i) & pagemask;
-    // page changed? show progress
-    if (thisPage != oldPage && oldPage != NO_PAGE)
-      showProgress ();
-    // now this is the current page
-    oldPage = thisPage;
+void verifyData(const unsigned long addr, const byte * pData, const int length) { //TODO: move, used in File_Utils
+    // check each byte
+    for (int i = 0; i < length; i++) {
+        unsigned long thisPage = (addr + i) & pagemask;
+        // page changed? show progress
+        if (thisPage != oldPage && oldPage != NO_PAGE) {
+            showProgress ();
+        }
 
-    byte found = readFlash (addr + i);
-    byte expected = pData [i];
-    if (found != expected)
-      {
-      if (errors <= 100)
-        {
-        Serial.print (F("Verification error at address "));
-        Serial.print (addr + i, HEX);
-        Serial.print (F(". Got: "));
-        showHex (found);
-        Serial.print (F(" Expected: "));
-        showHex (expected, true);
-        }  // end of haven't shown 100 errors yet
-      errors++;
-      }  // end if error
+        // now this is the current page
+        oldPage = thisPage;
+
+        byte found = readFlash (addr + i);
+        byte expected = pData [i];
+        if (found != expected) {
+            if (errors <= 100) {
+                Serial.print(F("Verification error at address "));
+                Serial.print(addr + i, HEX);
+                Serial.print(F(". Got: "));
+                showHex(found);
+                Serial.print(F(" Expected: "));
+                showHex(expected, true);
+            }  // end of haven't shown 100 errors yet
+            errors++;
+        }  // end if error
     }  // end of for
 
-  }  // end of verifyData
+}  // end of verifyData
 
 unsigned long lowestAddress;
 unsigned long highestAddress;
 unsigned long bytesWritten;
 
-void getSignature ()
-  {
-  foundSig = -1;
+void getSignature() {
+    foundSig = -1;
 
-  byte sig [3];
-  Serial.print (F("Signature = "));
+    byte sig [3];
+    Serial.print(F("Signature = "));
 
-  readSignature (sig);
-  for (byte i = 0; i < 3; i++)
-    showHex (sig [i]);
+    readSignature (sig);
+    for (byte i = 0; i < 3; i++) {
+        showHex(sig [i]);
+    }
 
-  Serial.println ();
+    Serial.println();
 
-  for (unsigned int j = 0; j < NUMITEMS (signatures); j++)
-    {
-    memcpy_P (&currentSignature, &signatures [j], sizeof currentSignature);
+    for (unsigned int j = 0; j < NUMITEMS (signatures); j++) {
+        memcpy_P (&currentSignature, &signatures [j], sizeof currentSignature);
 
-    if (memcmp (sig, currentSignature.sig, sizeof sig) == 0)
-      {
-      foundSig = j;
-      Serial.print (F("Processor = "));
-      Serial.println (currentSignature.desc);
-      Serial.print (F("Flash memory size = "));
-      Serial.print (currentSignature.flashSize, DEC);
-      Serial.println (F(" bytes."));
-      return;
-      }  // end of signature found
+        if (memcmp (sig, currentSignature.sig, sizeof sig) == 0) {
+            foundSig = j;
+            Serial.print(F("Processor = "));
+            Serial.println(currentSignature.desc);
+            Serial.print(F("Flash memory size = "));
+            Serial.print(currentSignature.flashSize, DEC);
+            Serial.println(F(" bytes."));
+            return;
+        }  // end of signature found
     }  // end of for each signature
 
-  Serial.println (F("Unrecogized signature."));
-  }  // end of getSignature
+    Serial.println(F("Unrecogized signature."));
+}  // end of getSignature
 
-void getFuseBytes ()
-  {
-  fuses [lowFuse]   = readFuse (lowFuse);
-  fuses [highFuse]  = readFuse (highFuse);
-  fuses [extFuse]   = readFuse (extFuse);
-  fuses [lockByte]  = readFuse (lockByte);
-  fuses [calibrationByte]  = readFuse (calibrationByte);
+void getFuseBytes() {
+    fuses [lowFuse]  = readFuse(lowFuse);
+    fuses [highFuse] = readFuse(highFuse);
+    fuses [extFuse]  = readFuse(extFuse);
+    fuses [lockByte] = readFuse(lockByte);
+    fuses [calibrationByte]  = readFuse(calibrationByte);
 
-  Serial.print (F("LFuse = "));
-  showHex (fuses [lowFuse], true);
-  Serial.print (F("HFuse = "));
-  showHex (fuses [highFuse], true);
-  Serial.print (F("EFuse = "));
-  showHex (fuses [extFuse], true);
-  Serial.print (F("Lock byte = "));
-  showHex (fuses [lockByte], true);
-  Serial.print (F("Clock calibration = "));
-  showHex (fuses [calibrationByte], true);
-  }  // end of getFuseBytes
+    Serial.print(F("LFuse = "));
+    showHex(fuses [lowFuse], true);
+    Serial.print(F("HFuse = "));
+    showHex(fuses [highFuse], true);
+    Serial.print(F("EFuse = "));
+    showHex(fuses [extFuse], true);
+    Serial.print(F("Lock byte = "));
+    showHex(fuses [lockByte], true);
+    Serial.print(F("Clock calibration = "));
+    showHex(fuses [calibrationByte], true);
+}  // end of getFuseBytes
 
-void showFuseName (const byte which)
-  {
-  switch (which)
-    {
-    case lowFuse:         Serial.print (F("low"));      break;
-    case highFuse:        Serial.print (F("high"));     break;
-    case extFuse:         Serial.print (F("extended")); break;
-    case lockByte:        Serial.print (F("lock"));     break;
-    case calibrationByte: Serial.print (F("clock"));    break;
+void showFuseName(const byte which) {
+    switch (which) {
+        case lowFuse:         Serial.print(F("low"));      break;
+        case highFuse:        Serial.print(F("high"));     break;
+        case extFuse:         Serial.print(F("extended")); break;
+        case lockByte:        Serial.print(F("lock"));     break;
+        case calibrationByte: Serial.print(F("clock"));    break;
     }  // end of switch
-  }  // end of showFuseName
+}  // end of showFuseName
 
-bool updateFuses (const bool writeIt)
-  {
-  unsigned long addr;
-  unsigned int  len;
+bool updateFuses (const bool writeIt) {
+    unsigned long addr;
+    unsigned int  len;
 
-  byte fusenumber = currentSignature.fuseWithBootloaderSize;
+    byte fusenumber = currentSignature.fuseWithBootloaderSize;
 
-  // if no fuse, can't change it
-  if (fusenumber == NO_FUSE)
-    {
-    Serial.println (F("No bootloader fuse."));
-    return false;  // ok return
+    // if no fuse, can't change it
+    if (fusenumber == NO_FUSE) {
+        Serial.println(F("No bootloader fuse."));
+        return false;  // ok return
     }
 
-  addr = currentSignature.flashSize;
-  len = currentSignature.baseBootSize;
+    addr = currentSignature.flashSize;
+    len = currentSignature.baseBootSize;
 
-  if (lowestAddress == 0)
-    {
-    Serial.println (F("No bootloader."));
+    if (lowestAddress == 0) {
+        Serial.println(F("No bootloader."));
 
-    // don't use bootloader
-    fuses [fusenumber] |= 1;
-    }
-  else
-    {
-    byte newval = 0xFF;
+        // don't use bootloader
+        fuses [fusenumber] |= 1;
+    } else {
+        byte newval = 0xFF;
 
-    if (lowestAddress == (addr - len))
-      newval = 3;
-    else if (lowestAddress == (addr - len * 2))
-      newval = 2;
-    else if (lowestAddress == (addr - len * 4))
-      newval = 1;
-    else if (lowestAddress == (addr - len * 8))
-      newval = 0;
-    else
-      {
-      Serial.println (F("Start address is not a bootloader boundary."));
-      return true;
-      }
+        if (lowestAddress == (addr - len)) {
+            newval = 3;
+        } else if (lowestAddress == (addr - len * 2)) {
+            newval = 2;
+        } else if (lowestAddress == (addr - len * 4)) {
+            newval = 1;
+        } else if (lowestAddress == (addr - len * 8)) {
+            newval = 0;
+        } else {
+            Serial.println(F("Start address is not a bootloader boundary."));
+            return true;
+        }
 
-    if (newval != 0xFF)
-      {
-      newval <<= 1;
-      fuses [fusenumber] &= ~0x07;   // also program (clear) "boot into bootloader" bit
-      fuses [fusenumber] |= newval;
-      }  // if valid
-
+        if (newval != 0xFF) {
+            newval <<= 1;
+            fuses [fusenumber] &= ~0x07;   // also program (clear) "boot into bootloader" bit
+            fuses [fusenumber] |= newval;
+        }  // if valid
     }  // if not address 0
 
-  if (writeIt)
-    {
-    Serial.print (F("Setting "));
-    writeFuse (fuses [fusenumber], fusenumber);
+    if (writeIt) {
+        Serial.print(F("Setting "));
+        writeFuse(fuses [fusenumber], fusenumber);
+    } else {
+        Serial.print(F("Suggest making "));
     }
-  else
-    Serial.print (F("Suggest making "));
 
-  showFuseName (fusenumber);
-  Serial.print (F(" fuse = "));
-  showHex (fuses [fusenumber], true);
+    showFuseName(fusenumber);
+    Serial.print(F(" fuse = "));
+    showHex(fuses[fusenumber], true);
 
-  if (writeIt)
-    Serial.println (F("Done."));
+    if (writeIt) {
+        Serial.println(F("Done."));
+    }
 
-  return false;
-  }  // end of updateFuses
+    return false;
+}  // end of updateFuses
 
 //------------------------------------------------------------------------------
 //      SETUP
 //------------------------------------------------------------------------------
-void setup ()
-  {
-  Serial.begin(115200);
-  while (!Serial) ;  // for Leonardo, Micro etc.
+void setup () {
+    Serial.begin(115200);
 
-  Serial.println ();
-  Serial.println ();
-  Serial.println (F("Atmega hex file uploader."));
-  Serial.println (F("Written by Nick Gammon."));
-  Serial.print   (F("Version "));
-  Serial.println (Version);
-  Serial.println (F("Compiled on " __DATE__ " at " __TIME__ " with Arduino IDE " xstr(ARDUINO) "."));
+    Serial.println();
+    Serial.println();
+    Serial.println(F("Atmega hex file uploader."));
+    Serial.println(F("Written by Nick Gammon."));
+    Serial.print   (F("Version "));
+    Serial.println(Version);
+    Serial.println(F("Compiled on " __DATE__ " at " __TIME__ " with Arduino IDE " xstr(ARDUINO) "."));
 
-  initPins ();
+    initPins();
 
-#if SD_CARD_ACTIVE
-  initFile ();
-#endif // SD_CARD_ACTIVE
+    #if SD_CARD_ACTIVE
+        initFile();
+    #endif // SD_CARD_ACTIVE
 
 }  // end of setup
 
-bool getYesNo ()
-  {
-  char response [5];
-  getline (response, sizeof response);
+bool getYesNo () {
+    char response [5];
+    getline (response, sizeof response);
 
-  return strcmp (response, "YES") == 0;
-  }  // end of getYesNo
+    return strcmp (response, "YES") == 0;
+}  // end of getYesNo
 
-void eraseFlashContents ()
-  {
-  Serial.println (F("Erase all flash memory. ARE YOU SURE? Type 'YES' to confirm ..."));
+void eraseFlashContents () {
+    Serial.println(F("Erase all flash memory. ARE YOU SURE? Type 'YES' to confirm ..."));
 
-  if (!getYesNo ())
+    if (!getYesNo ())
     {
-    Serial.println (F("Flash not erased."));
-    return;
+        Serial.println(F("Flash not erased."));
+        return;
     }
 
-  // ensure back in programming mode
-  if (!startProgramming ())
+    // ensure back in programming mode
+    if (!startProgramming())
     return;
 
-  Serial.println (F("Erasing chip ..."));
-  eraseMemory ();
-  Serial.println (F("Flash memory erased."));
+    Serial.println(F("Erasing chip ..."));
+    eraseMemory ();
+    Serial.println(F("Flash memory erased."));
 
-  }  // end of eraseFlashContents
-
-#if ALLOW_MODIFY_FUSES
-void modifyFuses ()
-  {
-  // display current fuses
-  getFuseBytes ();
-  byte fusenumber;
-
-  Serial.println (F("Choose fuse (LOW/HIGH/EXT/LOCK) ..."));
-
-  // get which fuse
-  char response [6];
-  getline (response, sizeof response);
-
-  // turn into number
-  if (strcmp (response, "LOW") == 0)
-    fusenumber = lowFuse;
-  else if (strcmp (response, "HIGH") == 0)
-    fusenumber = highFuse;
-  else if (strcmp (response, "EXT") == 0)
-    fusenumber = extFuse;
-  else if (strcmp (response, "LOCK") == 0)
-    fusenumber = lockByte;
-  else
-    {
-    Serial.println (F("Unknown fuse name."));
-    return;
-    }  // end if
-
-  // show current value
-  Serial.print (F("Current value of "));
-  showFuseName (fusenumber);
-  Serial.print (F(" fuse = "));
-  showHex (fuses [fusenumber], true);
-
-  // get new value
-  Serial.print (F("Enter new value for "));
-  showFuseName (fusenumber);
-  Serial.println (F(" fuse (2 hex digits) ..."));
-
-  getline (response, sizeof response);
-
-  if (strlen (response) == 0)
-    return;
-
-  if (strlen (response) != 2)
-    {
-    Serial.println (F("Enter exactly two hex digits."));
-    return;
-    }
-
-  const char * pResponse = response;
-  byte newValue;
-  if (hexConv (pResponse, newValue))
-    return;  // bad hex value
-
-  // check if no change
-  if (newValue == fuses [fusenumber])
-    {
-    Serial.println (F("Same as original. No change requested."));
-    return;
-    }  // end if no change to fuse
-
-#if SAFETY_CHECKS
-  if (fusenumber == highFuse && (newValue & 0xC0) != 0xC0)
-    {
-    Serial.println (F("Activating RSTDISBL/DWEN/OCDEN/JTAGEN not permitted."));
-    return;
-    }  // end safety check
-
-  if (fusenumber == highFuse && (newValue & 0x20) != 0)
-    {
-    Serial.println (F("Disabling SPIEN not permitted."));
-    return;
-    }  // end safety check
-#endif // SAFETY_CHECKS
-
-  // get confirmation
-  Serial.println (F("WARNING: Fuse changes may make the processor unresponsive."));
-  Serial.print (F("Confirm change "));
-  showFuseName (fusenumber);
-  Serial.print (F(" fuse from "));
-  showHex (fuses [fusenumber], false, true);
-  Serial.print (F("to "));
-  showHex (newValue, false, true);
-  Serial.println (F(". Type 'YES' to confirm ..."));
-
-  // has to be "YES" (not case sensitive)
-  if (!getYesNo ())
-    {
-    Serial.println (F("Cancelled."));
-    return;
-    }  // if cancelled
-
-  // ensure back in programming mode
-  if (!startProgramming ())
-    return;
-
-  // tell them what we are doing
-  Serial.print (F("Changing "));
-  showFuseName (fusenumber);
-  Serial.println (F(" fuse ..."));
-
-  // change it
-  writeFuse (newValue, fusenumber);
-
-  // confirm and show new value
-  Serial.println (F("Fuse written."));
-  getFuseBytes ();
-
-  }  // end of modifyFuses
-#endif
+}  // end of eraseFlashContents
 
 //------------------------------------------------------------------------------
 //      LOOP
 //------------------------------------------------------------------------------
-void loop ()
-{
-  Serial.println ();
-  Serial.println (F("--------- Starting ---------"));
-  Serial.println ();
+void loop() {
+  Serial.println();
+  Serial.println(F("--------- Starting ---------"));
+  Serial.println();
 
-  if (!startProgramming ())
-    {
-    Serial.println (F("Halted."));
-    stopProgramming ();
-    while  (true)
-      {}
-    }  // end of could not enter programming mode
+  if (!startProgramming()) {
+    Serial.println(F("Halted."));
+    stopProgramming();
+    while  (true) {}
+  }  // end of could not enter programming mode
 
-  getSignature ();
-  getFuseBytes ();
+  getSignature();
+  getFuseBytes();
 
   // don't have signature? don't proceed
-  if (foundSig == -1)
-    {
-    Serial.println (F("Halted."));
-    stopProgramming ();
-    while  (true)
-      {}
-    }  // end of no signature
+  if (foundSig == -1) {
+    Serial.println(F("Halted."));
+    stopProgramming();
+    while  (true) {}
+  }  // end of no signature
 
- // ask for verify or write
-  Serial.println (F("Actions:"));
-  Serial.println (F(" [E] erase flash"));
-#if ALLOW_MODIFY_FUSES
-  Serial.println (F(" [F] modify fuses"));
-#endif
-
-#if SD_CARD_ACTIVE
-  if (haveSDcard)
-    {
-    Serial.println (F(" [L] list directory"));
-#if ALLOW_FILE_SAVING
-    Serial.println (F(" [R] read from flash (save to disk)"));
-#endif
-    Serial.println (F(" [V] verify flash (compare to disk)"));
-    Serial.println (F(" [W] write to flash (read from disk)"));
-    }  // end of if SD card detected
-#endif // SD_CARD_ACTIVE
-
-  Serial.println (F("Enter action:"));
+  Serial.println(F("Enter action:"));
 
   // discard any old junk
-  while (Serial.available ())
-    Serial.read ();
+  while (Serial.available()) {
+      Serial.read();
+  }
+
 
   // turn off programming outputs if required
-  if (allowTargetToRun)
-    stopProgramming ();
-
-  char command;
-  do
-    {
-    command = toupper (Serial.read ());
-    } while (!isalpha (command));
-
-  Serial.println (command);  // echo their input
+  if (allowTargetToRun) {
+      stopProgramming();
+  }
 
   // re-start programming mode if required
-  if (allowTargetToRun)
-    if (!startProgramming ())
-      {
-      Serial.println (F("Halted."));
-      while  (true)
-        {}
-      } // end of could not enter programming mode
+  if (allowTargetToRun) {
+      if (!startProgramming ()) {
+        Serial.println(F("Halted."));
+        while  (true) {}
+        } // end of could not enter programming mode
+  }
 
-  switch (command)
-    {
-#if SD_CARD_ACTIVE
-
-  #if ALLOW_FILE_SAVING
-      case 'R':
-        readFlashContents ();
-        break;
-  #endif
-
-      case 'W':
-        writeFlashContents ();
-        break;
-
-      case 'V':
-        verifyFlashContents ();
-        break;
-#endif // SD_CARD_ACTIVE
-
-    case 'E':
-      eraseFlashContents ();
-      break;
-#if ALLOW_MODIFY_FUSES
-    case 'F':
-      modifyFuses ();
-      break;
-#endif
-
-#if SD_CARD_ACTIVE
-    case 'L':
-      showDirectory ();
-      break;
-#endif // SD_CARD_ACTIVE
-
-    default:
-      Serial.println (F("Unknown command."));
-      break;
-    }  // end of switch on command
+  //showDirectory ();
+  //writeFlashContents();
 
 }  // end of loop
-
