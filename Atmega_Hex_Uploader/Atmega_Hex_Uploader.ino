@@ -120,7 +120,7 @@ or the use or other dealings in the software.
 
 #include <SdFat.h>
 
-#include <avr/eeprom.h>
+// #include <avr/eeprom.h>
 
 // #include <memdebug.h>
 
@@ -264,17 +264,6 @@ const byte CLOCKOUT = 9;
     SdFat sd;
 #endif
 
-enum {
-    checkFile,
-    verifyFlash,
-    writeToFlash,
-};
-
-const uint8_t interruptPin = 2;
-long lastInterrupt = 0L;
-bool executeUpload = false;
-
-
 /**
 * CERES replace previous block with
 const uint8_t chipSelect = SS;
@@ -285,10 +274,21 @@ void * LAST_FILENAME_LOCATION_IN_EEPROM = 0;
 SdFat sd;
 */
 
+
+enum {
+    checkFile,
+    verifyFlash,
+    writeToFlash,
+};
+
+const uint8_t interruptPin = 2;
+long lastInterrupt = 0L;
+bool executeUpload = false;
+
 // get a line from serial (file name)
 //  ignore spaces, tabs etc.
 //  forces to upper case
-void getline(char * buf, size_t bufsize) { //TODO: move, used in File_Util
+void getline(char * buf, size_t bufsize) { //TODO: move, used in File_Util to determine the filename (might be able to just nuke it)
     byte i;
 
     // discard any old junk
