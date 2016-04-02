@@ -45,10 +45,10 @@
 // Version 1.35: Got rid of compiler warnings in IDE 1.6.7
 
 
-const bool allowTargetToRun = true;  // if true, programming lines are freed when not programming
+// const bool allowTargetToRun = true;  // if true, programming lines are freed when not programming
 
 #define ALLOW_MODIFY_FUSES true   // make false if this sketch doesn't fit into memory
-#define ALLOW_FILE_SAVING true    // make false if this sketch doesn't fit into memory
+#define ALLOW_FILE_SAVING false    // make false if this sketch doesn't fit into memory
 #define SAFETY_CHECKS true        // check for disabling SPIEN, or enabling RSTDISBL
 
 #define USE_ETHERNET_SHIELD false  // Use the Arduino Ethernet Shield for the SD card
@@ -264,6 +264,17 @@ const byte CLOCKOUT = 9;
     SdFat sd;
 #endif
 
+enum {
+    checkFile,
+    verifyFlash,
+    writeToFlash,
+};
+
+const uint8_t interruptPin = 2;
+long lastInterrupt = 0L;
+bool executeUpload = false;
+
+
 /**
 * CERES replace previous block with
 const uint8_t chipSelect = SS;
@@ -274,18 +285,10 @@ void * LAST_FILENAME_LOCATION_IN_EEPROM = 0;
 SdFat sd;
 */
 
-// actions to take
-enum {
-    checkFile,
-    verifyFlash,
-    writeToFlash,
-};
-
-
 // get a line from serial (file name)
 //  ignore spaces, tabs etc.
 //  forces to upper case
-void getline(char * buf, size_t bufsize) {
+void getline(char * buf, size_t bufsize) { //TODO: move, used in File_Util
     byte i;
 
     // discard any old junk
@@ -309,8 +312,6 @@ void getline(char * buf, size_t bufsize) {
     Serial.println(buf);  // echo what they typed
 }     // end of getline
 
-
-#if USE_BIT_BANGED_SPI
 // Bit Banged SPI transfer
 byte BB_SPITransfer(byte c) {
     byte bit;
@@ -342,8 +343,6 @@ byte BB_SPITransfer(byte c) {
 
     return c;
 }  // end of BB_SPITransfer
-
-#endif // USE_BIT_BANGED_SPI
 
 bool haveSDcard; // TODO: move, Set and modified in File_Utils
 
@@ -469,7 +468,7 @@ void showFuseName(const byte which) {
     }  // end of switch
 }  // end of showFuseName
 
-bool updateFuses (const bool writeIt) {
+bool updateFuses(const bool writeIt) { //TODO: move, used in File_Util
     unsigned long addr;
     unsigned int  len;
 
@@ -530,6 +529,38 @@ bool updateFuses (const bool writeIt) {
     return false;
 }  // end of updateFuses
 
+void uploadInterruptCallback() {
+    Serial.println("In Callback");
+    if (millis() - lastInterrupt >= 5000) {
+        lastInterrupt = millis();
+        executeUpload = true;
+    }
+}
+
+void uploadProgram() {
+    if (!startProgramming()) {
+        Serial.println(F("Unable to start programming ... Halted"));
+        stopProgramming();
+        while  (true) {}
+    }  // end of could not enter programming mode
+
+    getSignature();
+    getFuseBytes();
+
+     //TODO: the variable foundSig is set in the method getSignature()
+     // Replace with a bool return value.
+
+     // don't have signature? don't proceed
+    if (foundSig == -1) {
+        Serial.println(F("Signature not found ... Halted."));
+        stopProgramming();
+        while  (true) {}
+    }  // end of no signature
+
+    showDirectory();
+    writeFlashContents();
+}
+
 //------------------------------------------------------------------------------
 //      SETUP
 //------------------------------------------------------------------------------
@@ -550,80 +581,20 @@ void setup () {
         initFile();
     #endif // SD_CARD_ACTIVE
 
+    pinMode(interruptPin, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(interruptPin), uploadInterruptCallback, FALLING);
+
+    Serial.println();
+    Serial.println(F("--------- Starting ---------"));
+    Serial.println();
 }  // end of setup
-
-bool getYesNo () {
-    char response [5];
-    getline (response, sizeof response);
-
-    return strcmp (response, "YES") == 0;
-}  // end of getYesNo
-
-void eraseFlashContents () {
-    Serial.println(F("Erase all flash memory. ARE YOU SURE? Type 'YES' to confirm ..."));
-
-    if (!getYesNo ())
-    {
-        Serial.println(F("Flash not erased."));
-        return;
-    }
-
-    // ensure back in programming mode
-    if (!startProgramming())
-    return;
-
-    Serial.println(F("Erasing chip ..."));
-    eraseMemory ();
-    Serial.println(F("Flash memory erased."));
-
-}  // end of eraseFlashContents
 
 //------------------------------------------------------------------------------
 //      LOOP
 //------------------------------------------------------------------------------
 void loop() {
-  Serial.println();
-  Serial.println(F("--------- Starting ---------"));
-  Serial.println();
-
-  if (!startProgramming()) {
-    Serial.println(F("Halted."));
-    stopProgramming();
-    while  (true) {}
-  }  // end of could not enter programming mode
-
-  getSignature();
-  getFuseBytes();
-
-  // don't have signature? don't proceed
-  if (foundSig == -1) {
-    Serial.println(F("Halted."));
-    stopProgramming();
-    while  (true) {}
-  }  // end of no signature
-
-  Serial.println(F("Enter action:"));
-
-  // discard any old junk
-  while (Serial.available()) {
-      Serial.read();
-  }
-
-
-  // turn off programming outputs if required
-  if (allowTargetToRun) {
-      stopProgramming();
-  }
-
-  // re-start programming mode if required
-  if (allowTargetToRun) {
-      if (!startProgramming ()) {
-        Serial.println(F("Halted."));
-        while  (true) {}
-        } // end of could not enter programming mode
-  }
-
-  //showDirectory ();
-  //writeFlashContents();
-
+    if (executeUpload) {
+        uploadProgram();
+        executeUpload = false;
+    }
 }  // end of loop
